@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 """ holds class Place"""
 import models
 from models.base_model import BaseModel, Base
@@ -16,17 +16,15 @@ if models.storage_t == 'db':
                           Column('amenity_id', String(60),
                                  ForeignKey('amenities.id', onupdate='CASCADE',
                                             ondelete='CASCADE'),
-                                 primary_key=True), mysql_charset="latin1")
+                                 primary_key=True))
 
 
 class Place(BaseModel, Base):
     """Representation of Place """
     if models.storage_t == 'db':
         __tablename__ = 'places'
-        city_id = Column(String(60),
-                         ForeignKey('cities.id'), nullable=False)
-        user_id = Column(String(60),
-                         ForeignKey('users.id'), nullable=False)
+        city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
+        user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
         name = Column(String(128), nullable=False)
         description = Column(String(1024), nullable=True)
         number_rooms = Column(Integer, nullable=False, default=0)
@@ -35,15 +33,10 @@ class Place(BaseModel, Base):
         price_by_night = Column(Integer, nullable=False, default=0)
         latitude = Column(Float, nullable=True)
         longitude = Column(Float, nullable=True)
-        reviews = relationship("Review", backref="place",
-                               cascade="all, delete-orphan")
+        reviews = relationship("Review", backref="place")
         amenities = relationship("Amenity", secondary="place_amenity",
                                  backref="place_amenities",
                                  viewonly=False)
-        __table_args__ = (
-                {'mysql_default_charset': 'latin1'}
-                )
-
     else:
         city_id = ""
         user_id = ""
@@ -78,16 +71,8 @@ class Place(BaseModel, Base):
             """getter attribute returns the list of Amenity instances"""
             from models.amenity import Amenity
             amenity_list = []
-            amenities = models.storage.all(Amenity)
-            for amenity_id in self.amenity_ids:
-                if models.storage.get(Amenity, amenity_id):
-                    amenity_list.append(models.storage.get(Amenity,
-                                        amenity_id))
+            all_amenities = models.storage.all(Amenity)
+            for amenity in all_amenities.values():
+                if amenity.place_id == self.id:
+                    amenity_list.append(amenity)
             return amenity_list
-
-        @amenities.setter
-        def amenities(self, obj):
-            """ amenity setter method """
-            from models.amenity import Amenity
-            if type(obj) == Amenity:
-                self.amenity_ids.append(obj.id)
